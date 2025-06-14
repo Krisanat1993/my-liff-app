@@ -11,6 +11,10 @@
         body { font-family: 'Kanit', sans-serif; padding: 20px; background-color: #f4f4f9; }
         .container { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .hidden { display: none; }
+        /* Style สำหรับข้อความแจ้งเตือน */
+        .feedback-message {
+            transition: opacity 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -40,7 +44,7 @@
             </div>
             <button type="submit" id="submit-button" class="btn btn-primary btn-block">ส่งข้อมูล</button>
         </form>
-        <div id="error-message" class="alert alert-danger text-center mt-3 hidden"></div>
+        <div id="feedback-message" class="alert mt-3 text-center hidden feedback-message" role="alert"></div>
     </div>
 
     <script>
@@ -48,7 +52,7 @@
         const LIFF_ID = "2007574673-jAPeXVJb"; // <-- ใส่ LIFF ID ของคุณ
         
         // <<<=== สำคัญ: ใส่ URL ของ WEB APP ที่ได้จากการ DEPLOY ตรงนี้
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzms39k8FskXIy4WRtJ2aRbS8-05DS12KOsLMcogFR4NzZhlEvJ0ytLc70Mrn3ZQjAQ/exec"; 
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyE382WV6RrTX1qS4mJtqEKQQvC15vcW-oLZlABgFaj6stbpmEOIgZQPwXbBs4QISfS/exec"; 
         // ==========================================================
 
         async function initializeLiff() {
@@ -70,19 +74,32 @@
                 document.getElementById('loading').innerHTML = `<div class="alert alert-danger">เกิดข้อผิดพลาดในการโหลด LIFF: ${err.message}</div>`;
             }
         }
+        
+        // ฟังก์ชันสำหรับแสดงข้อความสถานะชั่วคราว
+        function showFeedback(message, isError = false) {
+            const feedbackElement = document.getElementById('feedback-message');
+            feedbackElement.textContent = message;
+            feedbackElement.classList.remove('hidden', 'alert-success', 'alert-danger');
+            feedbackElement.classList.add(isError ? 'alert-danger' : 'alert-success');
+            
+            // ทำให้ข้อความหายไปใน 3 วินาที
+            setTimeout(() => {
+                feedbackElement.classList.add('hidden');
+            }, 3000);
+        }
 
         document.getElementById('data-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            if (WEB_APP_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL" || !WEB_APP_URL) {
-                 document.getElementById('error-message').innerText = "ข้อผิดพลาด: กรุณาตั้งค่า WEB_APP_URL ในโค้ดก่อน";
-                 document.getElementById('error-message').classList.remove('hidden');
+            if (WEB_APP_URL.includes("YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") || !WEB_APP_URL) {
+                 showFeedback("ข้อผิดพลาด: กรุณาตั้งค่า WEB_APP_URL ในโค้ดก่อน", true);
                  return;
             }
 
             const submitButton = document.getElementById('submit-button');
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.classList.add('hidden');
+            const feedbackElement = document.getElementById('feedback-message');
+            feedbackElement.classList.add('hidden'); // ซ่อนข้อความเก่าก่อนส่ง
+            
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังส่ง...';
 
@@ -104,26 +121,29 @@
                 const result = await res.json();
 
                 if (result.status === 'success') {
-                    // --- ปรับแก้ 2: สร้างข้อความยืนยันพร้อมเพิ่ม "วันที่" และ "เวลา" ---
                     const now = new Date();
-                    const formattedDateTime = now.toLocaleString('th-TH', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        timeZone: 'Asia/Bangkok'
+                    const formattedDate = now.toLocaleDateString('th-TH', {
+                        year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok'
+                    });
+                     const formattedTime = now.toLocaleTimeString('th-TH', {
+                        hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok'
                     });
 
+                    // **ปรับปรุงข้อความ: นำ 'ยอดที่' และ 'วิธีการชำระเงิน' ออก**
                     const messageText = `บันทึกรายการเรียบร้อย ✅\n\n` +
-                                      `วันที่: ${formattedDateTime}\n` +
-                                      `ยอดที่: ${result.orderId}\n\n` +
-                                      `รายละเอียด:\n${formData.details}\n\n`;
+                                      `วันที่: ${formattedDate}\n` +
+                                      `เวลา: ${formattedTime} น.\n\n` +
+                                      `รายละเอียด:\n${formData.details}`;
 
                     if (liff.isInClient()) {
                         await liff.sendMessages([{ type: 'text', text: messageText }]);
-                        liff.closeWindow();
+                        
+                        // **ปรับปรุง: ไม่ปิดหน้าต่าง แต่แสดงข้อความสำเร็จและรีเซ็ตฟอร์ม**
+                        showFeedback("ส่งข้อมูลสำเร็จ! สามารถกรอกรายการต่อไปได้");
+                        document.getElementById('data-form').reset(); // ล้างข้อมูลในฟอร์ม
+
                     } else {
+                        // กรณีเปิดในเบราว์เซอร์ปกติ
                         alert("บันทึกข้อมูลสำเร็จ! (ไม่ได้เปิดใน LINE)");
                         document.getElementById('data-form').reset();
                     }
@@ -132,9 +152,9 @@
                 }
 
             } catch (error) {
-                errorMessage.innerText = `เกิดข้อผิดพลาด: ${error.message}`;
-                errorMessage.classList.remove('hidden');
+                showFeedback(`เกิดข้อผิดพลาด: ${error.message}`, true);
             } finally {
+                // ทำให้ปุ่มกลับมาใช้งานได้เสมอหลังการส่งข้อมูลเสร็จสิ้น
                 submitButton.disabled = false;
                 submitButton.innerText = 'ส่งข้อมูล';
             }
