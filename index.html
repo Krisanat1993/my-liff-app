@@ -11,20 +11,14 @@
         body { font-family: 'Kanit', sans-serif; padding: 20px; background-color: #f4f4f9; }
         .container { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .hidden { display: none; }
-        /* Style สำหรับข้อความแจ้งเตือน */
-        .feedback-message {
-            transition: opacity 0.5s ease-in-out;
-        }
+        .feedback-message { transition: opacity 0.5s ease-in-out; }
     </style>
 </head>
 <body>
     <div id="loading" class="text-center">
         <h4>กำลังโหลด...</h4>
-        <div class="spinner-border" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
+        <div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>
     </div>
-
     <div id="main-content" class="container hidden">
         <h4 class="text-center text-success">สวัสดี, <span id="user-display-name"></span>!</h4>
         <hr>
@@ -48,41 +42,31 @@
     </div>
 
     <script>
-        // ======================== การตั้งค่า ========================
+        // ส่วนการตั้งค่าและ initializeLiff() เหมือนเดิม
         const LIFF_ID = "2007574673-jAPeXVJb"; // <-- ใส่ LIFF ID ของคุณ
-        
-        // <<<=== สำคัญ: ใส่ URL ของ WEB APP ที่ได้จากการ DEPLOY ตรงนี้
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyywHs3UYpK68NgDVzlMiOkCJNTLG4aCif0xEk9yjgkWuo4cfT8lDvXasPEFxjdh05O/exec"; 
-        // ==========================================================
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyEeaecbwA7b264wDd8_a-Z7psWTAt4yiz7CJCRKryOVc5GsPXhoRrNTOOjqC33TEVQ/exec"; // <-- ใส่ Web App URL ของคุณ
 
-        async function initializeLiff() {
+        async function initializeLiff() { /* ... โค้ดส่วนนี้เหมือนเดิม ... */ 
             try {
                 await liff.init({ liffId: LIFF_ID });
-
                 if (!liff.isLoggedIn()) {
                     liff.login({ redirectUri: window.location.href });
                     return;
                 }
-
                 const profile = await liff.getProfile();
                 document.getElementById('user-display-name').textContent = profile.displayName;
-                
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
-
             } catch (err) {
                 document.getElementById('loading').innerHTML = `<div class="alert alert-danger">เกิดข้อผิดพลาดในการโหลด LIFF: ${err.message}</div>`;
             }
         }
-        
-        // ฟังก์ชันสำหรับแสดงข้อความสถานะชั่วคราว
-        function showFeedback(message, isError = false) {
+
+        function showFeedback(message, isError = false) { /* ... โค้ดส่วนนี้เหมือนเดิม ... */
             const feedbackElement = document.getElementById('feedback-message');
             feedbackElement.textContent = message;
             feedbackElement.classList.remove('hidden', 'alert-success', 'alert-danger');
             feedbackElement.classList.add(isError ? 'alert-danger' : 'alert-success');
-            
-            // ทำให้ข้อความหายไปใน 3 วินาที
             setTimeout(() => {
                 feedbackElement.classList.add('hidden');
             }, 3000);
@@ -90,71 +74,50 @@
 
         document.getElementById('data-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            if (WEB_APP_URL.includes("YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") || !WEB_APP_URL) {
-                 showFeedback("ข้อผิดพลาด: กรุณาตั้งค่า WEB_APP_URL ในโค้ดก่อน", true);
-                 return;
-            }
-
+            // ... ส่วนการตรวจสอบและจัดการปุ่ม submit เหมือนเดิม ...
             const submitButton = document.getElementById('submit-button');
-            const feedbackElement = document.getElementById('feedback-message');
-            feedbackElement.classList.add('hidden'); // ซ่อนข้อความเก่าก่อนส่ง
-            
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังส่ง...';
-
             const formData = {
                 details: document.getElementById('details').value,
                 payment: document.getElementById('payment').value
             };
-
+            
             try {
-                // ส่งข้อมูลไปที่ Google Apps Script
                 const res = await fetch(WEB_APP_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
-                    },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(formData),
                 });
 
-                const result = await res.json();
+                const result = await res.json(); // result จะมี {status, message, orderId}
 
                 if (result.status === 'success') {
                     const now = new Date();
-                    const formattedDate = now.toLocaleDateString('th-TH', {
-                        year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok'
-                    });
-                     const formattedTime = now.toLocaleTimeString('th-TH', {
-                        hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok'
-                    });
+                    const formattedDate = now.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok' });
+                    const formattedTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
 
-                    // **ปรับปรุงข้อความ: นำ 'ยอดที่' และ 'วิธีการชำระเงิน' ออก**
-                    const messageText = 
+                    // ***** จุดแก้ไข: สร้างข้อความโดยใช้ result.orderId ที่ได้รับมา *****
+                    const messageText = `ยอดที่: ${result.orderId}\n\n` + // <-- บรรทัดที่เพิ่มเข้ามา
+                                      
                                       `วันที่: ${formattedDate}\n` +
-                                      `เวลา: ${formattedTime} น.\n\n` +
-                                      `รายละเอียด:\n${formData.details}`;
+                                      `เวลา: ${formattedTime} \n\n` +
+                                      `\n${formData.details}`;
 
                     if (liff.isInClient()) {
                         await liff.sendMessages([{ type: 'text', text: messageText }]);
-                        
-                        // **ปรับปรุง: ไม่ปิดหน้าต่าง แต่แสดงข้อความสำเร็จและรีเซ็ตฟอร์ม**
                         showFeedback("ส่งข้อมูลสำเร็จ! สามารถกรอกรายการต่อไปได้");
-                        document.getElementById('data-form').reset(); // ล้างข้อมูลในฟอร์ม
-
+                        document.getElementById('data-form').reset();
                     } else {
-                        // กรณีเปิดในเบราว์เซอร์ปกติ
-                        alert("บันทึกข้อมูลสำเร็จ! (ไม่ได้เปิดใน LINE)");
+                        alert(`บันทึกข้อมูลสำเร็จ!\nยอดที่: ${result.orderId}`);
                         document.getElementById('data-form').reset();
                     }
                 } else {
-                    throw new Error(result.message || 'Server เกิดข้อผิดพลาดไม่ทราบสาเหตุ');
+                    throw new Error(result.message || 'Server เกิดข้อผิดพลาด');
                 }
-
             } catch (error) {
                 showFeedback(`เกิดข้อผิดพลาด: ${error.message}`, true);
             } finally {
-                // ทำให้ปุ่มกลับมาใช้งานได้เสมอหลังการส่งข้อมูลเสร็จสิ้น
                 submitButton.disabled = false;
                 submitButton.innerText = 'ส่งข้อมูล';
             }
