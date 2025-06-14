@@ -28,7 +28,7 @@
         <form id="data-form">
             <div class="form-group">
                 <label for="details">รายละเอียดยอด:</label>
-                <input type="text" id="details" class="form-control" placeholder="เช่น ค่าอาหาร, ค่าเดินทาง" required>
+                <textarea id="details" class="form-control" rows="8" placeholder="เช่น ค่าอาหาร, ค่าเดินทาง" required></textarea>
             </div>
             <div class="form-group">
                 <label for="payment">วิธีการชำระเงิน:</label>
@@ -86,7 +86,6 @@
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังส่ง...';
 
-            // --- ปรับแก้ 1: เตรียมข้อมูลเฉพาะที่ GAS ต้องการใช้ ---
             const formData = {
                 details: document.getElementById('details').value,
                 payment: document.getElementById('payment').value
@@ -105,11 +104,21 @@
                 const result = await res.json();
 
                 if (result.status === 'success') {
-                    // --- ปรับแก้ 2: สร้างข้อความยืนยันและอ่านค่า orderId จาก result.orderId โดยตรง ---
+                    // --- ปรับแก้ 2: สร้างข้อความยืนยันพร้อมเพิ่ม "วันที่" และ "เวลา" ---
+                    const now = new Date();
+                    const formattedDateTime = now.toLocaleString('th-TH', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'Asia/Bangkok'
+                    });
+
                     const messageText = `บันทึกรายการเรียบร้อย ✅\n\n` +
-                                        `ลำดับที่: ${result.orderId}\n` +
-                                        `รายละเอียด: ${formData.details}\n` +
-                                        `ชำระเงินโดย: ${formData.payment}`;
+                                      `วันที่: ${formattedDateTime}\n` +
+                                      `ยอดที่: ${result.orderId}\n\n` +
+                                      `รายละเอียด:\n${formData.details}\n\n`;
 
                     if (liff.isInClient()) {
                         await liff.sendMessages([{ type: 'text', text: messageText }]);
