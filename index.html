@@ -42,6 +42,18 @@
     </div>
 
     <script>
+// =================================================================
+        // โค้ดที่เพิ่มเข้ามาเพื่อแก้ไขปัญหา Cache ของ LIFF
+        // =================================================================
+        const originalFetch = window.fetch;
+        window.fetch = async function(url, options) {
+            if (url.toString().startsWith('https://liffsdk.line-scdn.net/') && url.toString().endsWith('.json')) {
+                url = url + '?ts=' + Math.random();
+            }
+            return originalFetch(url, options);
+        };
+        // =================================================================
+        
         // ส่วนการตั้งค่าและ initializeLiff() เหมือนเดิม
         const LIFF_ID = "2007574673-jAPeXVJb"; // <-- ใส่ LIFF ID ของคุณ
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJ2Cr-UBqhkDPeVF6ey_SaEwd3cByn0GnxUUuGFp9fULTLDXxjKnaSzkWZQurpOifC/exec"; // <-- ใส่ Web App URL ของคุณ
