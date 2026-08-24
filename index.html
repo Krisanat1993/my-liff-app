@@ -110,7 +110,7 @@
                     const formattedTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
 
                     // ***** จุดแก้ไข: สร้างข้อความโดยใช้ result.orderId ที่ได้รับมา *****
-                    const messageText = `ยอดที่: ${result.orderId}\n\n` + // <-- บรรทัดที่เพิ่มเข้ามา
+                    const messageText = `ยอดที่: ${result.orderId} \n(จาก: เพจ Koso9 นครนายก)\n\n` + // <-- บรรทัดที่เพิ่มเข้ามา
                                       
                                       `วันที่: ${formattedDate}\n` +
                                       `เวลา: ${formattedTime} \n\n` +
