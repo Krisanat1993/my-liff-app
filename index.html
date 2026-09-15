@@ -29,16 +29,22 @@
                 <textarea id="details" class="form-control" rows="8" placeholder="เช่น ค่าอาหาร, ค่าเดินทาง" required></textarea>
             </div>
             <div class="form-group">
-                <label for="payment">วิธีการชำระเงิน:</label>
-                <select id="payment" class="form-control" required>
-                    <option value="">-- เลือก --</option>
-                    <option value="COD 1620">COD 1620</option>
-                    <option value="EMS">EMS</option>
-                </select>
+                <label>วิธีการชำระเงิน:</label>
+                <div class="d-flex" id="payment-group" role="group" aria-label="เลือกวิธีการชำระเงิน">
+                    <button type="button" class="btn btn-outline-primary flex-fill mr-2 payment-btn" data-value="COD 1620">COD 1620</button>
+                    <button type="button" class="btn btn-outline-primary flex-fill payment-btn" data-value="EMS">EMS</button>
+                </div>
             </div>
             <button type="submit" id="submit-button" class="btn btn-primary btn-block">ส่งข้อมูล</button>
         </form>
         <div id="feedback-message" class="alert mt-3 text-center hidden feedback-message" role="alert"></div>
+        <div id="last-summary" class="mt-3 p-3 rounded hidden" style="background:#eef7ee; border:1px solid #cfe8cf;">
+            <small class="text-muted d-block mb-1">รายการล่าสุดที่ส่งไปแล้ว</small>
+            <div class="font-weight-bold" id="last-summary-orderid" style="font-size:1.1rem;"></div>
+            <div id="last-summary-meta" class="text-muted" style="font-size:0.85rem;"></div>
+            <div id="last-summary-detail" class="mt-1" style="white-space: pre-wrap;"></div>
+            <div id="last-summary-status" class="mt-2" style="font-size:0.85rem;"></div>
+        </div>
     </div>
 
     <script>
@@ -85,17 +91,38 @@
             }, 3000);
         }
 
+        // ปุ่มเลือกวิธีชำระเงิน (แทน dropdown เดิม)
+        let selectedPayment = '';
+        const paymentButtons = document.querySelectorAll('.payment-btn');
+        paymentButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                paymentButtons.forEach(b => {
+                    b.classList.remove('btn-primary', 'active');
+                    b.classList.add('btn-outline-primary');
+                });
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-primary', 'active');
+                selectedPayment = btn.dataset.value;
+            });
+        });
+
         document.getElementById('data-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            if (!selectedPayment) {
+                showFeedback('กรุณาเลือกวิธีการชำระเงิน (COD หรือ EMS)', true);
+                return;
+            }
+
             // ... ส่วนการตรวจสอบและจัดการปุ่ม submit เหมือนเดิม ...
             const submitButton = document.getElementById('submit-button');
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังส่ง...';
             const formData = {
                 details: document.getElementById('details').value,
-                payment: document.getElementById('payment').value
+                payment: selectedPayment
             };
-            
+
             try {
                 const res = await fetch(WEB_APP_URL, {
                     method: 'POST',
@@ -120,16 +147,33 @@
                     // ***** แก้ไข: บันทึกลงชีตสำเร็จแล้ว (result.status === 'success')
                     // ต่อให้ส่งข้อความเข้าไลน์ไม่สำเร็จ (สิทธิ์ liff ไม่พอ/ไม่ได้เปิดจากในกลุ่ม ฯลฯ)
                     // ก็ไม่ควรทำให้ผู้ใช้เห็นว่า "เกิดข้อผิดพลาด" เพราะข้อมูลบันทึกเรียบร้อยแล้วจริง
+                    let lineSent = null; // null = ไม่ได้เปิดในแอพไลน์ เลยไม่ได้ลองส่ง
                     if (liff.isInClient()) {
                         try {
                             await liff.sendMessages([{ type: 'text', text: messageText }]);
+                            lineSent = true;
                         } catch (sendErr) {
+                            lineSent = false;
                             console.error('ส่งข้อความเข้าแชทไลน์ไม่สำเร็จ:', sendErr);
                         }
                     }
 
                     showFeedback(`บันทึกข้อมูลสำเร็จ! ยอดที่: ${result.orderId}`);
+
+                    // แสดงสรุปยอดล่าสุดค้างไว้ใต้ปุ่มส่งข้อมูล (ไม่หายไปตามเวลาเหมือน feedback ด้านบน)
+                    document.getElementById('last-summary-orderid').textContent = `ยอดที่: ${result.orderId}`;
+                    document.getElementById('last-summary-meta').textContent = `${formattedDate} ${formattedTime} น. · ${formData.payment}`;
+                    document.getElementById('last-summary-detail').textContent = formData.details;
+                    document.getElementById('last-summary-status').innerHTML =
+                        '✓ บันทึกลงชีตแล้ว' + (lineSent === null ? '' : (lineSent ? ' · ✓ ส่งเข้าไลน์แล้ว' : ' · ✗ ส่งเข้าไลน์ไม่สำเร็จ'));
+                    document.getElementById('last-summary').classList.remove('hidden');
+
                     document.getElementById('data-form').reset();
+                    paymentButtons.forEach(b => {
+                        b.classList.remove('btn-primary', 'active');
+                        b.classList.add('btn-outline-primary');
+                    });
+                    selectedPayment = '';
                 } else {
                     throw new Error(result.message || 'Server เกิดข้อผิดพลาด');
                 }
