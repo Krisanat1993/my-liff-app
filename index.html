@@ -55,8 +55,9 @@
         // =================================================================
         
         // ส่วนการตั้งค่าและ initializeLiff() เหมือนเดิม
-        const LIFF_ID = "2006454560-4xnmQNJO"; // <-- ใส่ LIFF ID ของคุณ
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwJ2Cr-UBqhkDPeVF6ey_SaEwd3cByn0GnxUUuGFp9fULTLDXxjKnaSzkWZQurpOifC/exec"; // <-- ใส่ Web App URL ของคุณ
+        // *** ตรวจสอบให้ตรงกับ LIFF ID ที่แจกจริง (https://liff.line.me/<ตรงนี้>) ก่อน deploy ***
+        const LIFF_ID = "2007574673-jAPeXVJb"; // <-- ใส่ LIFF ID ของคุณ
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby_OnaW4SzzOdP7-Ezcsk3zmJ9TL1hM862XUuOfzrisyIOk9QlUuwZ2eOkwwnzzITfgXA/exec"; // <-- ใส่ Web App URL ของคุณ (deployment ใหม่ที่แก้ error แล้ว)
 
         async function initializeLiff() { /* ... โค้ดส่วนนี้เหมือนเดิม ... */ 
             try {
@@ -116,14 +117,19 @@
                                       `เวลา: ${formattedTime} \n\n` +
                                       `\n${formData.details}`;
 
+                    // ***** แก้ไข: บันทึกลงชีตสำเร็จแล้ว (result.status === 'success')
+                    // ต่อให้ส่งข้อความเข้าไลน์ไม่สำเร็จ (สิทธิ์ liff ไม่พอ/ไม่ได้เปิดจากในกลุ่ม ฯลฯ)
+                    // ก็ไม่ควรทำให้ผู้ใช้เห็นว่า "เกิดข้อผิดพลาด" เพราะข้อมูลบันทึกเรียบร้อยแล้วจริง
                     if (liff.isInClient()) {
-                        await liff.sendMessages([{ type: 'text', text: messageText }]);
-                        showFeedback("ส่งข้อมูลสำเร็จ! สามารถกรอกรายการต่อไปได้");
-                        document.getElementById('data-form').reset();
-                    } else {
-                        alert(`บันทึกข้อมูลสำเร็จ!\nยอดที่: ${result.orderId}`);
-                        document.getElementById('data-form').reset();
+                        try {
+                            await liff.sendMessages([{ type: 'text', text: messageText }]);
+                        } catch (sendErr) {
+                            console.error('ส่งข้อความเข้าแชทไลน์ไม่สำเร็จ:', sendErr);
+                        }
                     }
+
+                    showFeedback(`บันทึกข้อมูลสำเร็จ! ยอดที่: ${result.orderId}`);
+                    document.getElementById('data-form').reset();
                 } else {
                     throw new Error(result.message || 'Server เกิดข้อผิดพลาด');
                 }
