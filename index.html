@@ -137,13 +137,14 @@
                     const formattedDate = now.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Bangkok' });
                     const formattedTime = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
 
-                    // ***** จุดแก้ไข: สร้างข้อความโดยใช้ result.orderId ที่ได้รับมา *****
-                    // ***** เพิ่ม: บอกลำดับในรอบปัจจุบัน (วนใหม่ทุกครั้งที่ครบตามค่าใน ชีต2!F3) *****
+                    // "ยอดที่" ที่แสดงคือลำดับในรอบปัจจุบัน (วนกลับ 1 ทุกครั้งที่ครบค่าใน รายงานยอด!U1)
+                    // ไม่ใช่เลขยอดสะสมของชีต — รอบก่อนจ่ายแล้วไม่ต้องนับต่อ
+                    const shownNo = result.cyclePosition;
                     const roundLine = result.isRoundComplete
                         ? `\n🔔 ถึงยอดที่ต้องจ่ายเงินแล้ว! (ครบ ${result.roundLimit})\nรอบใหม่เริ่มนับต่อจากนี้\n`
-                        : `\nยอดในรอบนี้: ${result.cyclePosition}/${result.roundLimit}\n`;
+                        : '';
 
-                    const messageText = `ยอดที่: ${result.orderId} \n(จาก: เพจ Koso9 นครนายก)\n` +
+                    const messageText = `ยอดที่: ${shownNo} \n(จาก: เพจ Koso9 นครนายก)\n` +
                                       roundLine +
                                       `\nวันที่: ${formattedDate}\n` +
                                       `เวลา: ${formattedTime} \n\n` +
@@ -163,10 +164,10 @@
                         }
                     }
 
-                    showFeedback(`บันทึกข้อมูลสำเร็จ! ยอดที่: ${result.orderId}`);
+                    showFeedback(`บันทึกข้อมูลสำเร็จ! ยอดที่: ${shownNo}`);
 
                     // แสดงสรุปยอดล่าสุดค้างไว้ใต้ปุ่มส่งข้อมูล (ไม่หายไปตามเวลาเหมือน feedback ด้านบน)
-                    document.getElementById('last-summary-orderid').textContent = `ยอดที่: ${result.orderId}`;
+                    document.getElementById('last-summary-orderid').textContent = `ยอดที่: ${shownNo}`;
                     document.getElementById('last-summary-meta').textContent = `${formattedDate} ${formattedTime} น. · ${formData.payment}`;
                     document.getElementById('last-summary-detail').textContent = formData.details;
                     document.getElementById('last-summary-status').innerHTML =
